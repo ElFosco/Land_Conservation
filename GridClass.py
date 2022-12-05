@@ -18,8 +18,14 @@ class Grid:
             self.grid_species = np.asarray(self.grid_species)
         else:
             df = pd.read_csv(path)
+            self.grid_cost = [[initial_cost for _ in range(self.width)]
+                              for _ in range(self.height)]
+            self.grid_cost = np.asarray(self.grid_cost)
+            self.grid_species = [[[0 for _ in range(self.width)] for _ in range(self.height)] for _ in
+                                 range(self.animals)]
+            self.grid_species = np.asarray(self.grid_species)
             for index, row in df.iterrows():
-                print(row['c1'], row['c2'])
+                self.grid_cost = row['cell']
 
 
     def adds_specie(self, position, cov, size, index_specie):
