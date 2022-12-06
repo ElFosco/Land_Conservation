@@ -2,6 +2,7 @@ import numpy as np
 
 import math
 import pandas as pd
+from matplotlib import pyplot as plt
 
 
 class Grid:
@@ -18,14 +19,24 @@ class Grid:
             self.grid_species = np.asarray(self.grid_species)
         else:
             df = pd.read_csv(path)
+            self.height = df['row'].max() + 1
+            self.width = df['col'].max() + 1
+            self.animals = len(df.columns) - 4
             self.grid_cost = [[initial_cost for _ in range(self.width)]
                               for _ in range(self.height)]
             self.grid_cost = np.asarray(self.grid_cost)
             self.grid_species = [[[0 for _ in range(self.width)] for _ in range(self.height)] for _ in
                                  range(self.animals)]
             self.grid_species = np.asarray(self.grid_species)
+
             for index, row in df.iterrows():
-                self.grid_cost = row['cell']
+                index_row = row['row']
+                index_col = row['col']
+                self.grid_cost[index_row][index_col] = row['cost']
+                for i in range(animals):
+                    self.grid_species[i][index_row][index_col] = row['specie {}'.format(i)]
+
+
 
 
     def adds_specie(self, position, cov, size, index_specie):
@@ -68,18 +79,29 @@ class Grid:
 
     def convert_into_df(self):
         list_dataframe = []
+        list_number_specie = []
         for row in range(self.height):
             for col in range(self.width):
                 info = []
-                info.append([row, col])
+                info.append(row)
+                info.append(col)
                 info.append(self.grid_cost[row, col])
                 for animal in range(self.animals):
                     info.append(self.grid_species[animal][row][col])
                 list_dataframe.append(info)
-        list_number_specie = list(range(self.animals))
-        columns_df = ['cell','cost']+list_number_specie
+        for i in range(self.animals):
+            list_number_specie.append('specie {}'.format(i))
+        columns_df = ['row','col','cost']+list_number_specie
         df = pd.DataFrame(list_dataframe,columns=columns_df)
         return df
+
+    def show_cost_map(self):
+        plt.imshow(self.grid_cost, cmap='hot', interpolation='nearest')
+        plt.show()
+
+    def show_specie_map(self,index):
+        plt.imshow(self.grid_species[index], cmap='hot', interpolation='nearest')
+        plt.show()
 
 
 

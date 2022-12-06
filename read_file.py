@@ -1,4 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv('./data/data_1.csv')
-print(df.head())
+from GridClass import Grid
+
+grid = Grid(path='./data/data_3.csv')
+grid.show_cost_map()
