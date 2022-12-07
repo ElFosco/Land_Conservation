@@ -4,17 +4,21 @@ import random
 from GridClass import Grid
 
 
-def generate_random_example(width, height, initial_cost, animals, range_population, set_population, cities, max_size_cities,
+def generate_random_example(width, height, initial_cost, animals, range_population, set_population, set_threshold, cities, max_size_cities,
                             lakes, max_radius_lake, forests, max_radius_forest):
     grid = Grid(width,height,initial_cost,animals)
     for animal in range(animals):
         populations = random.choice(list(range_population))
+        size_population = 0
         for population in range(populations):
             y = random.randrange(grid.width)
             x = random.randrange(grid.height)
             std = np.random.uniform(0.8, 1.8)
             qty = random.choice(set_population)
-            grid.adds_specie([x, y], std, qty, animal)
+            size_population += qty
+            grid.add_specie([x, y], std, qty, animal)
+        threshold = int(random.choice(set_threshold) * size_population)
+        grid.add_specie_threshold(animal,threshold)
     for _ in range(cities):
         width = random.randrange(1,max_size_cities)
         height = random.randrange(1,max_size_cities)

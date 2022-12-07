@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 
 class Grid:
 
-    def __init__(self, width=10, height=10, initial_cost=1, animals=15,path=''):
-        if path=='':
+    def __init__(self, width=10, height=10, initial_cost=1, animals=15, path_grid='', path_threshold=''):
+        if path_grid == '':
             self.width = width
             self.height = height
             self.animals = animals
@@ -17,33 +17,40 @@ class Grid:
             self.grid_cost = np.asarray(self.grid_cost)
             self.grid_species = [[[0 for _ in range(self.width)] for _ in range(self.height)] for _ in range(self.animals)]
             self.grid_species = np.asarray(self.grid_species)
+            self.species_threshold = [0 for _ in range(self.animals)]
         else:
-            df = pd.read_csv(path)
-            self.height = df['row'].max() + 1
-            self.width = df['col'].max() + 1
-            self.animals = len(df.columns) - 4
+            df_grid = pd.read_csv(path_grid)
+            df_species = pd.read_csv(path_threshold)
+            self.height = df_grid['row'].max() + 1
+            self.width = df_grid['col'].max() + 1
+            self.animals = len(df_grid.columns) - 4
             self.grid_cost = [[initial_cost for _ in range(self.width)]
                               for _ in range(self.height)]
             self.grid_cost = np.asarray(self.grid_cost)
             self.grid_species = [[[0 for _ in range(self.width)] for _ in range(self.height)] for _ in
                                  range(self.animals)]
+            self.species_threshold = [0 for _ in range(self.animals)]
             self.grid_species = np.asarray(self.grid_species)
 
-            for index, row in df.iterrows():
+            for index, row in df_grid.iterrows():
                 index_row = row['row']
                 index_col = row['col']
                 self.grid_cost[index_row][index_col] = row['cost']
                 for i in range(animals):
                     self.grid_species[i][index_row][index_col] = row['specie {}'.format(i)]
+            for index, row in df_species.iterrows():
+                self.add_specie_threshold(index,row['thr'])
 
 
 
-
-    def adds_specie(self, position, cov, size, index_specie):
+    def add_specie(self, position, cov, size, index_specie):
         distribution = np.random.multivariate_normal(mean=position, cov=[[cov, 0], [0, cov]], size=size)
         for el in distribution:
             if el[0] < self.height and el[1] < self.width:
                 self.grid_species[index_specie][math.floor(el[1])][math.floor(el[0])] += 1
+
+    def add_specie_threshold(self, index_specie,threshold):
+        self.species_threshold[index_specie] = threshold
 
     def add_rectangle_constant_cost(self, corner, width, height, cost):
         index_col = min(self.width, corner[1] + width)
@@ -77,7 +84,7 @@ class Grid:
                         self.grid_cost[row][col] < cost_cell:
                     self.grid_cost[row][col] = cost_cell
 
-    def convert_into_df(self):
+    def convert_into_dfs(self):
         list_dataframe = []
         list_number_specie = []
         for row in range(self.height):
@@ -92,8 +99,9 @@ class Grid:
         for i in range(self.animals):
             list_number_specie.append('specie {}'.format(i))
         columns_df = ['row','col','cost']+list_number_specie
-        df = pd.DataFrame(list_dataframe,columns=columns_df)
-        return df
+        df_grid = pd.DataFrame(list_dataframe,columns=columns_df)
+        df_threshold = pd.DataFrame(self.species_threshold,columns=['thr'])
+        return df_grid, df_threshold
 
     def show_cost_map(self):
         plt.imshow(self.grid_cost, cmap='hot', interpolation='nearest')
