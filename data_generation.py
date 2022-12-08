@@ -1,6 +1,6 @@
 import random
 
-from GridClass import Grid
+from grid_class import Grid
 from utility import generate_random_example
 import matplotlib.pyplot as plt
 

@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-from GridClass import Grid
+from grid_class import Grid
 
 
 def generate_random_example(width, height, initial_cost, animals, range_population, set_population, set_threshold, cities, max_size_cities,

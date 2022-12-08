@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
 
-from GridClass import Grid
+from grid_class import Grid
 
 data = 15
 
