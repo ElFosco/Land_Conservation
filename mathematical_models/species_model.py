@@ -28,7 +28,7 @@ class SpeciesModel():
         return self.lands.value(), self.model.objective_.value()
 
 
-    def make_constraint(self,keyword,threeshold):
+    def make_constraint(self,keyword, threeshold):
         if keyword[0] == 'specie':
             animal = keyword[1]
             expr = (self.saved[animal] * threeshold) <= \
@@ -37,7 +37,7 @@ class SpeciesModel():
             expr = (sum(self.lands * self.grid.grid_cost) <= threeshold)
         return expr
 
-    def increase_saved_num_species(self,obj_fun,to_relax):
+    def increase_saved_species_xplain(self, obj_fun, to_relax):
         obj_fun = obj_fun + 1
         fixed_constraints = []
         fixed_constraints.append(sum(self.saved[i] for i in range(self.grid.animals)) == obj_fun)
@@ -64,7 +64,43 @@ class SpeciesModel():
         explanation = self.counter_factual_xplain(relaxed_constraints, fixed_constraints)
         return explanation
 
+    def set_constraints_slack(self,obj_fun, model_slack):
+        model_slack += sum(self.saved[i] for i in range(self.grid.animals)) == obj_fun
+        self.slack = intvar(0, 100, shape=self.grid.animals + 1, name="slack")
+        for specie in range(self.grid.animals):
+            model_slack += self.make_constraint(['specie', specie], self.grid.species_threshold[specie] - self.slack[specie])
+        model_slack += self.make_constraint(['cost'], self.thr_cost + self.slack[-1])
+        return model_slack
 
+
+    def set_obj_function_mcs(self, model_slack_mcs):
+        self.flag_slacks = boolvar(shape=len(self.slack) + 1, name="flags_slack")
+        for specie in range(self.grid.animals):
+            model_slack_mcs += (self.flag_slacks[specie] == (self.slack[specie] > 0))
+        model_slack_mcs += (self.flag_slacks[-1] == (self.slack[-1] > 0))
+        obj_fun = 1000*sum(self.flag_slacks) + sum(self.slack)
+        model_slack_mcs.minimize(obj_fun)
+        return model_slack_mcs
+
+    def set_obj_function_mus(self, model_slack_mus):
+        obj_fun = 1000 * max(self.slack) + sum(self.slack)
+        model_slack_mus.minimize(obj_fun)
+        return model_slack_mus
+
+
+    def increase_saved_species_mcs(self,obj_fun):
+        model_slack_mcs = Model()
+        model_slack_mcs = self.set_constraints_slack(obj_fun+1,model_slack_mcs)
+        model_slack_mcs = self.set_obj_function_mcs(model_slack_mcs)
+        model_slack_mcs.solve()
+        return self.slack.value()
+
+    def increase_saved_species_mus(self,obj_fun):
+        model_slack_mus = Model()
+        model_slack_mus = self.set_constraints_slack(obj_fun + 1, model_slack_mus)
+        model_slack_mus = self.set_obj_function_mus(model_slack_mus)
+        model_slack_mus.solve()
+        return self.slack.value()
 
     def counter_factual_xplain(self, relaxed_constraints, fixed_constraints):
         '''
